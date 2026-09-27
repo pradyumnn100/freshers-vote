@@ -8,7 +8,7 @@ export async function GET(req) {
 
   const { data: candidates, error: cErr } = await supabaseAdmin
     .from('candidates')
-    .select('id, category, candidate_number, name, department, active, manual_votes')
+    .select('id, category, candidate_number, name, department, photo_url, active, manual_votes')
     .order('category', { ascending: true })
     .order('candidate_number', { ascending: true });
   if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
