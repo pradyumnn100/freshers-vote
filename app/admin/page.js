@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [results, setResults] = useState([]);
   const [resultsMsg, setResultsMsg] = useState('');
   const [resultsBusy, setResultsBusy] = useState(false);
-
+  const [showDisplay, setShowDisplay] = useState(false);
   async function load(s) {
     try {
       const d = await call('/api/admin/candidates', {}, s);
@@ -118,7 +118,10 @@ export default function AdminPage() {
       <div className="panel" style={{ maxWidth: 720, marginTop: 24, marginLeft: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '1.1rem' }}>Results</h2>
-          <button className="btn btn-ghost" style={{ padding: '8px 16px' }} disabled={resultsBusy} onClick={() => loadResults(secret)}>{resultsBusy ? 'Refreshing…' : 'Refresh'}</button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost" style={{ padding: '8px 16px' }} onClick={() => setShowDisplay(true)}>Result display</button>
+                 <button className="btn btn-ghost" style={{ padding: '8px 16px' }} disabled={resultsBusy} onClick={() => loadResults(secret)}>{resultsBusy ? 'Refreshing…' : 'Refresh'}</button>
+   </div>
         </div>
         {['mr', 'ms'].map(cat => (
           <div key={cat} style={{ marginTop: 18 }}>
@@ -172,4 +175,50 @@ export default function AdminPage() {
       </div>
     </div>
   );
+
+{showDisplay && (
+  <div style={{
+    position: 'fixed', inset: 0, background: '#05060cf5', zIndex: 100,
+    overflowY: 'auto', padding: '50px 20px'
+  }}>
+    <button
+      className="btn btn-ghost"
+      style={{ position: 'fixed', top: 20, right: 20, zIndex: 101 }}
+      onClick={() => setShowDisplay(false)}
+    >
+      Close
+    </button>
+    <div className="wrap">
+      {['mr', 'ms'].map(cat => {
+        const list = results
+          .filter(r => r.category === cat && r.active)
+          .sort((a, b) => b.total_votes - a.total_votes);
+        if (!list.length) return null;
+        return (
+          <div key={cat} style={{ marginBottom: 48 }}>
+            <h1 style={{ fontSize: '1.8rem', textAlign: 'center' }}>
+              {cat === 'mr' ? 'Mr. Freshers' : 'Ms. Freshers'}
+            </h1>
+            <div className="grid" style={{ marginTop: 24 }}>
+              {list.map((r, i) => (
+                <div
+                  key={r.id}
+                  className="card"
+                  style={i === 0 ? { borderColor: 'var(--gold)', boxShadow: '0 0 0 1px var(--gold)' } : undefined}
+                >
+                  {i === 0 && <span className="num">Winner</span>}
+                  {r.photo_url
+                    ? <img src={r.photo_url} alt={r.name} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: 14, marginBottom: 14 }} />
+                    : <div className="avatar" style={{ background: '#ffffff12' }}>{r.name?.[0]}</div>}
+                  <h3 style={{ textAlign: 'center' }}>{r.name}</h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
 }
