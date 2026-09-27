@@ -72,7 +72,7 @@ curl -X POST https://your-app.vercel.app/api/admin/close-voting \
 Go to `https://your-app.vercel.app/admin`, enter your `ADMIN_SECRET`,
 and use the form to add each candidate (name, department, tagline,
 photo upload). Photos are stored in the `candidate-photos` Supabase
-bucket; "Deactivate" retires a candidate without deleting their past
+bucket; "Deactivate" retires a candidate without deleting their past  
 votes. This replaces the demo candidates from `schema.sql` — deactivate
 those once your real ones are in.
 
