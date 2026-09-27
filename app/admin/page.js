@@ -18,10 +18,34 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [voteMsg, setVoteMsg] = useState('');
   const [voteBusy, setVoteBusy] = useState(false);
+  const [results, setResults] = useState([]);
+  const [resultsMsg, setResultsMsg] = useState('');
+  const [resultsBusy, setResultsBusy] = useState(false);
 
   async function load(s) {
-    try { const d = await call('/api/admin/candidates', {}, s); setCandidates(d.candidates); setUnlocked(true); }
+    try {
+      const d = await call('/api/admin/candidates', {}, s);
+      setCandidates(d.candidates);
+      setUnlocked(true);
+      loadResults(s);
+    }
     catch { setErr('Incorrect admin secret.'); }
+  }
+
+  async function loadResults(s) {
+    setResultsBusy(true); setResultsMsg('');
+    try {
+      const d = await call('/api/admin/results', {}, s);
+      setResults(d.results);
+    } catch (e) { setResultsMsg(e.message); }
+    setResultsBusy(false);
+  }
+
+  async function addVote(candidateId, delta) {
+    try {
+      await call('/api/admin/add-vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, count: delta }) }, secret);
+      await loadResults(secret);
+    } catch (e) { setResultsMsg(e.message); }
   }
 
   async function addCandidate(e) {
@@ -89,6 +113,29 @@ export default function AdminPage() {
           <button className="btn btn-ghost" disabled={voteBusy} onClick={closeVoting}>Close voting</button>
         </div>
         {voteMsg && <p className="hint" style={{ color: 'var(--sub)' }}>{voteMsg}</p>}
+      </div>
+
+      <div className="panel" style={{ maxWidth: 720, marginTop: 24, marginLeft: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1.1rem' }}>Results</h2>
+          <button className="btn btn-ghost" style={{ padding: '8px 16px' }} disabled={resultsBusy} onClick={() => loadResults(secret)}>{resultsBusy ? 'Refreshing…' : 'Refresh'}</button>
+        </div>
+        {['mr', 'ms'].map(cat => (
+          <div key={cat} style={{ marginTop: 18 }}>
+            <div style={{ fontSize: '.85rem', color: 'var(--sub)', marginBottom: 6 }}>{cat === 'mr' ? 'Mr. Freshers' : 'Ms. Freshers'}</div>
+            {results.filter(r => r.category === cat).sort((a, b) => b.total_votes - a.total_votes).map(r => (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+                <span style={{ minWidth: 34, color: 'var(--sub)', fontSize: 13 }}>#{r.candidate_number}</span>
+                <span style={{ flex: 1 }}>{r.name}{!r.active && <span style={{ color: 'var(--sub)' }}> (inactive)</span>}</span>
+                <span style={{ color: 'var(--sub)', fontSize: 12 }}>{r.real_votes} real + {r.manual_votes} manual</span>
+                <b style={{ minWidth: 30, textAlign: 'right' }}>{r.total_votes}</b>
+                <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 13 }} onClick={() => addVote(r.id, 1)}>+1</button>
+                <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 13 }} onClick={() => addVote(r.id, -1)}>-1</button>
+              </div>
+            ))}
+          </div>
+        ))}
+        {resultsMsg && <p className="hint" style={{ color: 'var(--sub)' }}>{resultsMsg}</p>}
       </div>
 
       <form onSubmit={addCandidate} className="panel" style={{ maxWidth: 480, marginTop: 24, marginLeft: 0 }}>
