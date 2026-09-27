@@ -16,6 +16,8 @@ export default function AdminPage() {
   const [form, setForm] = useState({ category: 'mr', candidate_number: '', name: '', department: '', tagline: '' });
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [voteMsg, setVoteMsg] = useState('');
+  const [voteBusy, setVoteBusy] = useState(false);
 
   async function load(s) {
     try { const d = await call('/api/admin/candidates', {}, s); setCandidates(d.candidates); setUnlocked(true); }
@@ -45,6 +47,25 @@ export default function AdminPage() {
     load(secret);
   }
 
+  async function openVoting() {
+    setVoteBusy(true); setVoteMsg('');
+    try {
+      const d = await call('/api/admin/open-voting', { method: 'POST' }, secret);
+      const end = new Date(d.votingEnd);
+      setVoteMsg(`Voting is open until ${end.toLocaleTimeString()}.`);
+    } catch (e) { setVoteMsg(e.message); }
+    setVoteBusy(false);
+  }
+
+  async function closeVoting() {
+    setVoteBusy(true); setVoteMsg('');
+    try {
+      await call('/api/admin/close-voting', { method: 'POST' }, secret);
+      setVoteMsg('Voting has been closed.');
+    } catch (e) { setVoteMsg(e.message); }
+    setVoteBusy(false);
+  }
+
   if (!unlocked) return (
     <div className="wrap" style={{ paddingTop: 110 }}>
       <div className="panel">
@@ -59,6 +80,16 @@ export default function AdminPage() {
   return (
     <div className="wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
       <h1 style={{ fontSize: '1.8rem' }}>Candidate management</h1>
+
+      <div className="panel" style={{ maxWidth: 480, marginTop: 24, marginLeft: 0 }}>
+        <h2 style={{ fontSize: '1.1rem' }}>Voting control</h2>
+        <p className="status-line" style={{ marginTop: 0 }}>Opening starts a fixed 10-minute voting window. You can close it early anytime.</p>
+        <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+          <button className="btn btn-primary" disabled={voteBusy} onClick={openVoting}>Open voting (10 min)</button>
+          <button className="btn btn-ghost" disabled={voteBusy} onClick={closeVoting}>Close voting</button>
+        </div>
+        {voteMsg && <p className="hint" style={{ color: 'var(--sub)' }}>{voteMsg}</p>}
+      </div>
 
       <form onSubmit={addCandidate} className="panel" style={{ maxWidth: 480, marginTop: 24, marginLeft: 0 }}>
         <h2 style={{ fontSize: '1.1rem' }}>Add candidate</h2>
