@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [showDisplay, setShowDisplay] = useState(false);
   const [publicEnabled, setPublicEnabled] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
 
   async function load(s) {
     try {
@@ -63,6 +64,19 @@ export default function AdminPage() {
     setPublishBusy(false);
   }
 
+    async function resetVotes() {
+    const typed = window.prompt('This deletes ALL votes (real + manual) and lets everyone vote again.\n\nType RESET to confirm:');
+    if (typed !== 'RESET') return;
+    setResetBusy(true); setResultsMsg('');
+    try {
+      await call('/api/admin/reset-votes', { method: 'POST' }, secret);
+      setPublicEnabled(false);
+      await loadResults(secret);
+      setResultsMsg('All votes reset to 0. Voters can vote again once you open voting.');
+    } catch (e) { setResultsMsg(e.message); }
+    setResetBusy(false);
+  }
+  
   async function addVote(candidateId, delta) {
     try {
       await call('/api/admin/add-vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, count: delta }) }, secret);
@@ -158,7 +172,10 @@ export default function AdminPage() {
             {publicEnabled ? 'Live — visible to everyone at /results' : 'Not public yet'}
           </span>
           {publicEnabled && <a href="/results" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--blue)' }}>Open public page →</a>}
-        </div>
+                  <button className="btn btn-ghost" style={{ padding: '8px 16px', marginLeft: 'auto', color: '#ff8a8a' }} disabled={resetBusy} onClick={resetVotes}>
+            {resetBusy ? 'Resetting…' : 'Reset all votes to 0'}
+          </button>
+            </div>
         {['mr', 'ms'].map(cat => (
           <div key={cat} style={{ marginTop: 18 }}>
             <div style={{ fontSize: '.85rem', color: 'var(--sub)', marginBottom: 6 }}>{cat === 'mr' ? 'Mr. Freshers' : 'Ms. Freshers'}</div>
