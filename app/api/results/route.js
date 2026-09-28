@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 // Public endpoint — no admin secret required. Only exposes name + photo,
 // never vote counts, and only when an admin has published results.
 export async function GET() {
-  const { data: settings } = await supabaseAdmin
-    .from('event_settings').select('public_results_enabled').eq('id', 1).single();
+ const { data: settings, error: sErr } = await supabaseAdmin
+   .from('event_settings').select('public_results_enabled').eq('id', 1).single();
+  if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
 
   if (!settings?.public_results_enabled) {
     return NextResponse.json({ enabled: false, results: [] });
