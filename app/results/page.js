@@ -7,7 +7,7 @@ export default function ResultsPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/results');
+      const res = await fetch('/api/results', { cache: 'no-store' });
       const data = await res.json();
       if (!data.enabled) { setState('disabled'); return; }
       setResults(data.results || []);
