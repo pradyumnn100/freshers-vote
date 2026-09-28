@@ -48,7 +48,7 @@ export default function AdminPage() {
 
   async function loadPublicStatus() {
     try {
-      const res = await fetch('/api/results');
+       const res = await fetch('/api/results', { cache: 'no-store' });
       const d = await res.json();
       setPublicEnabled(!!d.enabled);
     } catch { /* ignore — status just won't reflect until next load */ }
@@ -58,8 +58,13 @@ export default function AdminPage() {
     setPublishBusy(true);
     try {
       const next = !publicEnabled;
-      await call('/api/admin/toggle-public-results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: next }) }, secret);
-      setPublicEnabled(next);
+            const d = await call('/api/admin/toggle-public-results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: next }) }, secret);
+      setPublicEnabled(d.enabled);
+      // Confirm the public endpoint sees the same value the database now holds
+      const check = await fetch('/api/results', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
+      if (!!check.enabled !== d.enabled) {
+        setResultsMsg('Saved in the database, but /api/results still reports the old value. The live site is running an old build or wrong Supabase project. Redeploy and check env vars.');
+      } else setResultsMsg('');
     } catch (e) { setResultsMsg(e.message); }
     setPublishBusy(false);
   }
