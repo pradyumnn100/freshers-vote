@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 // Public endpoint — no admin secret required. Only exposes name + photo,
 // never vote counts, and only when an admin has published results.
 export async function GET() {
